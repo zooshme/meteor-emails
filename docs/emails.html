@@ -606,9 +606,6 @@ and <strong>send email designs</strong> from the browser.</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>
-  Routes =</pre></div></div>
-            
         </li>
         
         
@@ -624,11 +621,14 @@ provided <code>route</code> prop from the template.</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-attribute">addPreview</span>: <span class="hljs-function"><span class="hljs-params">(template)</span> -&gt;</span>
-      check template.name, String
-      check template.route,
-        <span class="hljs-attribute">path</span>: String
-        <span class="hljs-attribute">data</span>: Match.Optional Function</pre></div></div>
+            <div class="content"><div class='highlight'><pre><span class="hljs-function">  <span class="hljs-title">previewAction</span> = <span class="hljs-params">(template)</span> -&gt;</span>
+    <span class="hljs-keyword">try</span>
+      data = template.route.data <span class="hljs-keyword">and</span> template.route.data.apply(<span class="hljs-keyword">this</span>, arguments)
+    <span class="hljs-keyword">catch</span> ex
+      msg = <span class="hljs-string">'Exception in '</span>+template.name+<span class="hljs-string">' data function: '</span>+ex.message
+      Utils.Logger.error msg, TAG
+      <span class="hljs-property">@response</span>.writeHead <span class="hljs-number">500</span>
+      <span class="hljs-keyword">return</span> <span class="hljs-property">@response</span>.end msg</pre></div></div>
             
         </li>
         
@@ -639,26 +639,24 @@ provided <code>route</code> prop from the template.</p>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-28">&#182;</a>
               </div>
-              <p>Typically <code>/emails/preview/myEmailTemplate</code>.</p>
+              <p>Compile, since we wanna refresh markup and CSS inlining.</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>      path = settings.routePrefix + <span class="hljs-string">'/preview'</span> + template.route.path
+            <div class="content"><div class='highlight'><pre>    compile template
 
-      Utils.Logger.info <span class="hljs-string">'Adding route: /'</span> + path, TAG
+    Utils.Logger.info <span class="hljs-string">"Rendering <span class="hljs-subst">#{template.name}</span> ..."</span>, TAG
 
-      Router.route <span class="hljs-string">"preview<span class="hljs-subst">#{template.name}</span>Email"</span>,
-        <span class="hljs-attribute">path</span>: path
-        <span class="hljs-attribute">where</span>: <span class="hljs-string">'server'</span>
-        <span class="hljs-attribute">action</span>:<span class="hljs-function"> -&gt;</span>
+    <span class="hljs-keyword">try</span>
+      html = render template.name, data
+      Utils.Logger.info <span class="hljs-string">"Rendering successful!"</span>, TAG
+    <span class="hljs-keyword">catch</span> ex
+      msg = <span class="hljs-string">'Could not preview email: '</span> + ex.message
+      Utils.Logger.error msg, TAG
+      html = msg
 
-          <span class="hljs-keyword">try</span>
-            data = template.route.data <span class="hljs-keyword">and</span> template.route.data.apply(<span class="hljs-keyword">this</span>, arguments)
-          <span class="hljs-keyword">catch</span> ex
-            msg = <span class="hljs-string">'Exception in '</span>+template.name+<span class="hljs-string">' data function: '</span>+ex.message
-            Utils.Logger.error msg, TAG
-            <span class="hljs-property">@response</span>.writeHead <span class="hljs-number">500</span>
-            <span class="hljs-keyword">return</span> <span class="hljs-property">@response</span>.end msg</pre></div></div>
+    <span class="hljs-property">@response</span>.writeHead <span class="hljs-number">200</span>, <span class="hljs-string">'Content-Type'</span>: <span class="hljs-string">'text/html'</span>
+    <span class="hljs-property">@response</span>.end(html, <span class="hljs-string">'utf8'</span>)</pre></div></div>
             
         </li>
         
@@ -669,24 +667,12 @@ provided <code>route</code> prop from the template.</p>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-29">&#182;</a>
               </div>
-              <p>Compile, since we wanna refresh markup and CSS inlining.</p>
+              <p>This function adds the <code>send</code> route, for easy sending emails from
+the browser.</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>          compile template
-
-          Utils.Logger.info <span class="hljs-string">"Rendering <span class="hljs-subst">#{template.name}</span> ..."</span>, TAG
-
-          <span class="hljs-keyword">try</span>
-            html = render template.name, data
-            Utils.Logger.info <span class="hljs-string">"Rendering successful!"</span>, TAG
-          <span class="hljs-keyword">catch</span> ex
-            msg = <span class="hljs-string">'Could not preview email: '</span> + ex.message
-            Utils.Logger.error msg, TAG
-            html = msg
-
-          <span class="hljs-property">@response</span>.writeHead <span class="hljs-number">200</span>, <span class="hljs-string">'Content-Type'</span>: <span class="hljs-string">'text/html'</span>
-          <span class="hljs-property">@response</span>.end(html, <span class="hljs-string">'utf8'</span>)</pre></div></div>
+            <div class="content"><div class='highlight'><pre><span class="hljs-function">  <span class="hljs-title">sendAction</span> = <span class="hljs-params">(template)</span> -&gt;</span></pre></div></div>
             
         </li>
         
@@ -697,25 +683,34 @@ provided <code>route</code> prop from the template.</p>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-30">&#182;</a>
               </div>
-              <p>This function adds the <code>send</code> route, for easy sending emails from
-the browser.</p>
+              <p>Who to send to? It depends: it primarly reads from the <code>?to</code>
+query param, and secondly from the <code>testEmail</code> prop in settings.</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    <span class="hljs-attribute">addSend</span>: <span class="hljs-function"><span class="hljs-params">(template)</span> -&gt;</span>
-      check template.name, String
-      check template.route,
-        <span class="hljs-attribute">path</span>: String
-        <span class="hljs-attribute">data</span>: Match.Optional Function
+            <div class="content"><div class='highlight'><pre>    to = <span class="hljs-property">@params</span>.query.to <span class="hljs-keyword">or</span> settings.testEmail
 
-      path = settings.routePrefix + <span class="hljs-string">'/send'</span> + template.route.path
+    Utils.Logger.info <span class="hljs-string">"Sending <span class="hljs-subst">#{template.name}</span> ..."</span>, TAG
 
-      Utils.Logger.info <span class="hljs-string">'Adding route /'</span> + path, TAG
+    <span class="hljs-keyword">if</span> to?
+      <span class="hljs-keyword">try</span>
+        data = template.route.data <span class="hljs-keyword">and</span> template.route.data.apply(<span class="hljs-keyword">this</span>, arguments)
+      <span class="hljs-keyword">catch</span> ex
+        Utils.Logger.error <span class="hljs-string">'Exception in '</span>+template.name+<span class="hljs-string">' data function: '</span>+ex.message, TAG
+        <span class="hljs-keyword">return</span>
 
-      Router.route <span class="hljs-string">"send<span class="hljs-subst">#{template.name}</span>Email"</span>,
-        <span class="hljs-attribute">path</span>: path
-        <span class="hljs-attribute">where</span>: <span class="hljs-string">'server'</span>
-        <span class="hljs-attribute">action</span>:<span class="hljs-function"> -&gt;</span></pre></div></div>
+      res = sendEmail(
+        <span class="hljs-attribute">to</span>: to
+        <span class="hljs-attribute">data</span>: data
+        <span class="hljs-attribute">template</span>: template.name
+        <span class="hljs-attribute">subject</span>: <span class="hljs-string">'[TEST] '</span> + template.name
+      )
+
+      <span class="hljs-keyword">if</span> res <span class="hljs-keyword">is</span> <span class="hljs-literal">false</span>
+        <span class="hljs-property">@response</span>.writeHead <span class="hljs-number">500</span>
+        msg = <span class="hljs-string">'Did not send test email, something went wrong. Check the logs.'</span>
+      <span class="hljs-keyword">else</span>
+        <span class="hljs-property">@response</span>.writeHead <span class="hljs-number">200</span></pre></div></div>
             
         </li>
         
@@ -726,34 +721,19 @@ the browser.</p>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-31">&#182;</a>
               </div>
-              <p>Who to send to? It depends: it primarly reads from the <code>?to</code>
-query param, and secondly from the <code>testEmail</code> prop in settings.</p>
+              <p>If there’s no <code>MAIL_URL</code> environment variable, Meteor cannot send
+the email and echoes it out to <code>STDOUT</code> instead.</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>          to = <span class="hljs-property">@params</span>.query.to <span class="hljs-keyword">or</span> settings.testEmail
+            <div class="content"><div class='highlight'><pre>        reallySentEmail = !!process.env.MAIL_URL
+        msg = <span class="hljs-keyword">if</span> reallySentEmail <span class="hljs-keyword">then</span> <span class="hljs-string">"Sent test email to <span class="hljs-subst">#{to}</span>"</span> <span class="hljs-keyword">else</span> <span class="hljs-string">"Sent email to STDOUT"</span>
 
-          Utils.Logger.info <span class="hljs-string">"Sending <span class="hljs-subst">#{template.name}</span> ..."</span>, TAG
+      <span class="hljs-property">@response</span>.end(msg)
 
-          <span class="hljs-keyword">if</span> to?
-            <span class="hljs-keyword">try</span>
-              data = template.route.data <span class="hljs-keyword">and</span> template.route.data.apply(<span class="hljs-keyword">this</span>, arguments)
-            <span class="hljs-keyword">catch</span> ex
-              Utils.Logger.error <span class="hljs-string">'Exception in '</span>+template.name+<span class="hljs-string">' data function: '</span>+ex.message, TAG
-              <span class="hljs-keyword">return</span>
-
-            res = sendEmail(
-              <span class="hljs-attribute">to</span>: to
-              <span class="hljs-attribute">data</span>: data
-              <span class="hljs-attribute">template</span>: template.name
-              <span class="hljs-attribute">subject</span>: <span class="hljs-string">'[TEST] '</span> + template.name
-            )
-
-            <span class="hljs-keyword">if</span> res <span class="hljs-keyword">is</span> <span class="hljs-literal">false</span>
-              <span class="hljs-property">@response</span>.writeHead <span class="hljs-number">500</span>
-              msg = <span class="hljs-string">'Did not send test email, something went wrong. Check the logs.'</span>
-            <span class="hljs-keyword">else</span>
-              <span class="hljs-property">@response</span>.writeHead <span class="hljs-number">200</span></pre></div></div>
+    <span class="hljs-keyword">else</span>
+      <span class="hljs-property">@response</span>.writeHead <span class="hljs-number">400</span>
+      <span class="hljs-property">@response</span>.end(<span class="hljs-string">"No testEmail provided."</span>)</pre></div></div>
             
         </li>
         
@@ -764,19 +744,19 @@ query param, and secondly from the <code>testEmail</code> prop in settings.</p>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-32">&#182;</a>
               </div>
-              <p>If there’s no <code>MAIL_URL</code> environment variable, Meteor cannot send
-the email and echoes it out to <code>STDOUT</code> instead.</p>
+              <p>Adds all the routes from a template.</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>              reallySentEmail = !!process.env.MAIL_URL
-              msg = <span class="hljs-keyword">if</span> reallySentEmail <span class="hljs-keyword">then</span> <span class="hljs-string">"Sent test email to <span class="hljs-subst">#{to}</span>"</span> <span class="hljs-keyword">else</span> <span class="hljs-string">"Sent email to STDOUT"</span>
+            <div class="content"><div class='highlight'><pre><span class="hljs-function">  <span class="hljs-title">addRoutes</span> = <span class="hljs-params">(template)</span> -&gt;</span>
+    check template.name, String
+    check template.route.path, String
 
-            <span class="hljs-property">@response</span>.end(msg)
+    types =
+      <span class="hljs-attribute">preview</span>: previewAction
+      <span class="hljs-attribute">send</span>: sendAction
 
-          <span class="hljs-keyword">else</span>
-            <span class="hljs-property">@response</span>.writeHead <span class="hljs-number">400</span>
-            <span class="hljs-property">@response</span>.end(<span class="hljs-string">"No testEmail provided."</span>)</pre></div></div>
+    _.each types, <span class="hljs-function"><span class="hljs-params">(action, type)</span> -&gt;</span></pre></div></div>
             
         </li>
         
@@ -786,6 +766,50 @@ the email and echoes it out to <code>STDOUT</code> instead.</p>
               
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-33">&#182;</a>
+              </div>
+              <p>Typically <code>/emails/preview/myEmailTemplate</code>.
+Do some formatting. The <code>path</code> should be the prefix, followed by
+the type (<code>preview</code> or <code>send</code>). So it could look like</p>
+<p>   /emails/preview/sampleTemplate/:param</p>
+<p>Also capitalize the first character in the template name for
+the name of the route.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      path = <span class="hljs-string">"<span class="hljs-subst">#{settings.routePrefix}</span>/<span class="hljs-subst">#{type}</span>"</span> + template.route.path
+      name = Utils.capitalizeFirstChar(template.name)
+      routeName = <span class="hljs-string">"<span class="hljs-subst">#{type}</span><span class="hljs-subst">#{name}</span>Email"</span>
+      
+      Utils.Logger.info <span class="hljs-string">"Add route: [<span class="hljs-subst">#{routeName}</span>] at path /"</span> + path, TAG
+
+      Router.route routeName,
+        <span class="hljs-attribute">path</span>: path
+        <span class="hljs-attribute">where</span>: <span class="hljs-string">'server'</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-34">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-34">&#182;</a>
+              </div>
+              <p>An action still need the route context, but call it
+with our <code>template</code> as the sole parameter.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>        <span class="hljs-attribute">action</span>:<span class="hljs-function"> -&gt;</span> action.call(<span class="hljs-keyword">this</span>, template)</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-35">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-35">&#182;</a>
               </div>
               <h2 id="init">Init</h2>
 <p>Init routine. Precompiles all templates provided and
@@ -803,30 +827,29 @@ setup routes if provided and if in dev mode.</p>
         </li>
         
         
-        <li id="section-34">
+        <li id="section-36">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-34">&#182;</a>
+                <a class="pilcrow" href="#section-36">&#182;</a>
               </div>
               <p>Only add these routes when in dev mode or if forced.</p>
 
             </div>
             
             <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">if</span> template.route <span class="hljs-keyword">and</span> settings.addRoutes
-          Routes.addPreview template
-          Routes.addSend template
+          addRoutes(template)
 
   init()</pre></div></div>
             
         </li>
         
         
-        <li id="section-35">
+        <li id="section-37">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-35">&#182;</a>
+                <a class="pilcrow" href="#section-37">&#182;</a>
               </div>
               <h2 id="export">Export</h2>
 <p>The “interface”.</p>
@@ -840,11 +863,11 @@ setup routes if provided and if in dev mode.</p>
         </li>
         
         
-        <li id="section-36">
+        <li id="section-38">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-36">&#182;</a>
+                <a class="pilcrow" href="#section-38">&#182;</a>
               </div>
               <p>Exported symbol</p>
 <p>I wanna export a singleton symbol with an ‘init’

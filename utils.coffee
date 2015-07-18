@@ -75,13 +75,3 @@ share.MailerUtils =
       return fs.readFileSync(file, encoding: 'utf8')
     catch ex
       throw new Meteor.Error 500, 'Could not find file: ' + file, ex.message
-
-  # Take a path to a SCSS file and compiles it to CSS with `node-sass`.
-  toCSS: (scss) ->
-    file = path.join(ROOT, scss)
-
-    try
-      return sass.renderSync(file: file, sourceMap: false).css.toString()
-    catch ex
-      console.error 'Sass failed to compile: ' + ex.message
-      console.error "In #{ex.file or scss} at line #{ex.line}, column #{ex.column}"

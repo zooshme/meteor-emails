@@ -131,9 +131,7 @@ MailerClass = (options) ->
     if template.css
       content = addCSS Utils.readFile(template.css), content
 
-    # .. and compile and inline any SCSS file paths.
-    if template.scss
-      content = addCSS Utils.toCSS(template.scss), content
+
 
     if options.layout and template.layout isnt false
       layout = options.layout
@@ -142,16 +140,9 @@ MailerClass = (options) ->
       if layout.css
         layoutContent = addCSS Utils.readFile(layout.css), layoutContent
         content = addCSS Utils.readFile(layout.css), content
-
-      if layout.scss
-        layoutContent = addCSS Utils.toCSS(layout.scss), layoutContent
-        content = addCSS Utils.toCSS(layout.scss), content
-
+        
       if template.css
         layoutContent = addCSS Utils.readFile(template.css), layoutContent
-
-      if template.scss
-        layoutContent = addCSS Utils.toCSS(template.scss), layoutContent
 
       SSR.compileTemplate(layout.name, layoutContent, language: settings.language)
       addHelpers layout
